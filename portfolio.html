@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nishanth Gopinath — multi-agent systems &amp; federated learning</title>
+<meta name="description" content="AI/ML engineer in Dublin. I build multi-agent systems and make them fast. Researching federated learning that survives an aggregator you don't trust.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nishanth Gopinath — multi-agent systems &amp; federated learning">
+<meta property="og:description" content="AI/ML engineer in Dublin. I build multi-agent systems and make them fast. Researching federated learning that survives an aggregator you don't trust.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── tokens ─────────────────────────────────────────────── */
+:root{
+  --paper:#E7EBEE;
+  --raised:#F3F6F7;
+  --ink:#0F2436;
+  --soft:#4E677B;
+  --line:#C2CED7;
+  --line-faint:#D6DFE5;
+  --blue:#24469F;
+  --red:#AC2230;
+  --sel:rgba(36,70,159,.16);
+  --shadow:0 1px 0 rgba(15,36,54,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A1725;
+    --raised:#101F30;
+    --ink:#D9E5EE;
+    --soft:#89A2B8;
+    --line:#22364B;
+    --line-faint:#1A2B3D;
+    --blue:#7FA2F0;
+    --red:#F0808D;
+    --sel:rgba(127,162,240,.22);
+    --shadow:0 1px 0 rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A1725;
+  --raised:#101F30;
+  --ink:#D9E5EE;
+  --soft:#89A2B8;
+  --line:#22364B;
+  --line-faint:#1A2B3D;
+  --blue:#7FA2F0;
+  --red:#F0808D;
+  --sel:rgba(127,162,240,.22);
+  --shadow:0 1px 0 rgba(0,0,0,.4);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16.5px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--sel)}
+img,svg{max-width:100%}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+
+h1,h2,h3{
+  font-family:Fraunces,"Iowan Old Style",Georgia,serif;
+  font-weight:500;
+  font-variation-settings:"SOFT" 20,"WONK" 1;
+  line-height:1.15;
+  margin:0;
+  letter-spacing:-.008em;
+}
+p{margin:0 0 1em}
+.prose{max-width:64ch}
+
+.mono{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace}
+
+/* ── shell ──────────────────────────────────────────────── */
+.shell{
+  max-width:1020px;
+  margin:0 auto;
+  padding:0 26px 100px;
+  display:grid;
+  grid-template-columns:118px minmax(0,1fr);
+  column-gap:44px;
+}
+.hero{grid-column:1 / -1}
+.rail{grid-column:1;align-self:start;position:sticky;top:46px}
+.body-col{grid-column:2;min-width:0}
+
+/* ── theme switch ───────────────────────────────────────── */
+.themer{
+  position:fixed;top:14px;right:16px;z-index:20;
+  background:var(--raised);color:var(--soft);
+  border:1px solid var(--line);border-radius:999px;
+  padding:6px 13px;font-size:12.5px;font-family:inherit;
+  cursor:pointer;box-shadow:var(--shadow);
+}
+.themer:hover{color:var(--ink);border-color:var(--blue)}
+
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:14px;top:14px;z-index:30;background:var(--raised);padding:9px 14px;border:1px solid var(--blue)}
+
+/* ── hero ───────────────────────────────────────────────── */
+.hero{padding:76px 0 8px}
+.name{font-size:clamp(2.45rem,6.4vw,3.9rem);font-variation-settings:"opsz" 96,"SOFT" 28,"WONK" 1}
+.name .alt{color:var(--soft);font-size:.46em;font-variation-settings:"opsz" 30,"WONK" 0;letter-spacing:0}
+.pitch{
+  max-width:33ch;margin:22px 0 0;
+  font-size:clamp(1.08rem,2.3vw,1.3rem);line-height:1.45;
+}
+.pitch .q{color:var(--soft)}
+.where{margin-top:16px;font-size:14px;color:var(--soft)}
+
+.links{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px;padding:0;list-style:none}
+.links a{
+  display:inline-block;text-decoration:none;
+  border:1px solid var(--line);border-radius:3px;
+  padding:7px 15px;font-size:14px;background:var(--raised);
+}
+.links a:hover{border-color:var(--blue);color:var(--blue)}
+.links .lead{border-color:var(--blue);color:var(--blue);font-weight:500}
+
+/* ── hero graph ─────────────────────────────────────────── */
+.graph{margin:46px 0 4px;width:100%}
+.graph svg{width:100%;height:auto;display:block}
+.g-edge{fill:none;stroke:var(--line);stroke-width:1.4}
+.g-edge.adv{stroke:var(--red);stroke-width:1.7;stroke-dasharray:5 4}
+.g-node rect{fill:var(--raised);stroke:var(--line);stroke-width:1.3}
+.g-node text{fill:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:13.5px}
+.g-node:hover rect{stroke:var(--blue)}
+.g-node:hover text{fill:var(--blue)}
+.g-root rect{fill:none;stroke:var(--ink);stroke-width:1.5}
+.g-root text{fill:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:13px}
+.g-cap{fill:var(--soft);font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+
+@keyframes draw{from{stroke-dashoffset:300;opacity:0}to{stroke-dashoffset:0;opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.g-edge{stroke-dasharray:300;animation:draw .95s cubic-bezier(.4,0,.2,1) backwards}
+.g-edge.adv{stroke-dasharray:5 4;animation:none}
+.g-node{animation:rise .5s ease-out backwards;transform-box:fill-box;transform-origin:center}
+.g-node:nth-of-type(1){animation-delay:.72s}
+.g-node:nth-of-type(2){animation-delay:.8s}
+.g-node:nth-of-type(3){animation-delay:.88s}
+.g-node:nth-of-type(4){animation-delay:.96s}
+.e2{animation-delay:.1s}.e3{animation-delay:.2s}.e4{animation-delay:.3s}
+
+/* ── rail nav ───────────────────────────────────────────── */
+.rail ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--line-faint)}
+.rail a{
+  display:block;position:relative;text-decoration:none;
+  padding:9px 0 9px 20px;font-size:13.5px;color:var(--soft);
+}
+.rail a::before{
+  content:"";position:absolute;left:-4.5px;top:50%;margin-top:-3.5px;
+  width:7px;height:7px;border-radius:50%;
+  background:var(--paper);border:1px solid var(--line);
+}
+.rail a:hover{color:var(--ink)}
+.rail a[aria-current="true"]{color:var(--ink);font-weight:500}
+.rail a[aria-current="true"]::before{background:var(--blue);border-color:var(--blue)}
+
+/* ── sections ───────────────────────────────────────────── */
+.sec{padding:66px 0 0;scroll-margin-top:40px}
+.sec > h2{
+  font-size:1.62rem;margin-bottom:6px;
+  font-variation-settings:"opsz" 60,"SOFT" 24,"WONK" 1;
+}
+.sec > .lede{color:var(--soft);max-width:56ch;margin-bottom:34px;font-size:15px}
+
+/* ── project entries (rows, not cards) ──────────────────── */
+.proj{
+  display:grid;grid-template-columns:150px minmax(0,1fr);
+  column-gap:30px;padding:30px 0;
+  border-top:1px solid var(--line-faint);scroll-margin-top:40px;
+}
+.proj:first-of-type{border-top:none;padding-top:4px}
+.figure{padding-top:3px}
+.figure .n{
+  display:block;font-family:"IBM Plex Mono",monospace;
+  font-size:1.32rem;font-weight:500;line-height:1.25;color:var(--blue);
+  letter-spacing:-.02em;
+}
+.figure .n small{font-size:.7em;color:var(--soft);font-weight:400}
+.figure .cap{display:block;margin-top:7px;font-size:12.5px;color:var(--soft);line-height:1.4}
+.proj h3{font-size:1.16rem;font-variation-settings:"opsz" 40,"SOFT" 20,"WONK" 0}
+.role{margin:5px 0 12px;font-size:13.5px;color:var(--soft)}
+.proj p{max-width:62ch;font-size:15.4px}
+.stack{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.stack li{
+  font-family:"IBM Plex Mono",monospace;font-size:11.8px;color:var(--soft);
+  border:1px solid var(--line-faint);border-radius:2px;padding:2.5px 7px;
+}
+.also{
+  margin-top:34px;padding-top:22px;border-top:1px solid var(--line-faint);
+  font-size:14.6px;color:var(--soft);max-width:62ch;
+}
+.also strong{color:var(--ink);font-weight:500}
+
+/* ── research ───────────────────────────────────────────── */
+.question{
+  margin:0 0 36px;padding:2px 0 2px 24px;
+  border-left:2px solid var(--red);
+  font-family:Fraunces,Georgia,serif;font-size:1.28rem;line-height:1.42;
+  font-variation-settings:"opsz" 48,"SOFT" 40,"WONK" 1;
+  max-width:44ch;
+}
+.paper{padding:22px 0;border-top:1px solid var(--line-faint)}
+.paper:first-of-type{border-top:none;padding-top:0}
+.paper h3{font-size:1.06rem;line-height:1.4;font-variation-settings:"opsz" 30,"WONK" 0}
+.paper .venue{font-size:13.4px;color:var(--soft);margin:6px 0 9px}
+.paper p{font-size:15px;max-width:62ch;margin-bottom:0}
+.honour{color:var(--red);font-size:13.4px;margin-top:9px}
+
+/* ── background ─────────────────────────────────────────── */
+.cv{margin:0;padding:0}
+.cv div{
+  display:grid;grid-template-columns:132px minmax(0,1fr);
+  column-gap:30px;padding:17px 0;border-top:1px solid var(--line-faint);
+}
+.cv div:first-child{border-top:none;padding-top:0}
+.cv dt{font-family:"IBM Plex Mono",monospace;font-size:12.8px;color:var(--soft);padding-top:3px}
+.cv dd{margin:0;font-size:15.4px}
+.cv dd span{display:block;color:var(--soft);font-size:14px;margin-top:3px;max-width:58ch}
+
+/* ── toolkit ────────────────────────────────────────────── */
+.kit{margin:0;padding:0}
+.kit div{display:grid;grid-template-columns:132px minmax(0,1fr);column-gap:30px;padding:13px 0}
+.kit dt{font-size:14px;color:var(--soft);padding-top:2px}
+.kit dd{margin:0;font-family:"IBM Plex Mono",monospace;font-size:13.4px;line-height:1.85}
+
+/* ── contact ────────────────────────────────────────────── */
+.close{
+  margin-top:30px;padding:30px 0 0;border-top:1px solid var(--line);
+}
+.close p{font-size:1.06rem;max-width:46ch}
+footer{margin-top:60px;font-size:12.8px;color:var(--soft)}
+
+/* ── shared control ─────────────────────────────────────── */
+.btn{
+  font-family:inherit;font-size:13.6px;color:var(--ink);
+  background:var(--raised);border:1px solid var(--ink);border-radius:3px;
+  padding:8px 17px;cursor:pointer;
+}
+.btn:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.42;cursor:default;border-color:var(--line)}
+
+/* ── hero runner ────────────────────────────────────────── */
+.runbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0 0}
+.runbar .hint{font-size:13px;color:var(--soft)}
+.pkt{fill:var(--blue)}
+.pkt.flag{fill:var(--red)}
+.g-node.live rect{stroke:var(--blue);stroke-width:2;fill:var(--sel)}
+.g-node.live text{fill:var(--blue)}
+.g-node.flag rect{stroke:var(--red);stroke-width:2}
+.g-node.flag text{fill:var(--red)}
+.g-node.done rect{stroke:var(--blue)}
+.g-root.live rect{stroke:var(--blue);stroke-width:2}
+.g-root.live text{fill:var(--blue)}
+.g-node rect,.g-node text,.g-root rect,.g-root text{transition:stroke .18s,fill .18s}
+
+.log{
+  margin:18px 0 0;height:124px;overflow:hidden;
+  border-top:1px solid var(--line-faint);padding-top:12px;
+  font-family:"IBM Plex Mono",monospace;font-size:12.4px;line-height:1.85;color:var(--soft);
+}
+.log p{margin:0;white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.log .hi{color:var(--ink)}
+.log .warn{color:var(--red)}
+.log .idle{color:var(--soft)}
+
+/* ── latency race ───────────────────────────────────────── */
+.race{margin:22px 0 4px;padding:20px;border:1px solid var(--line-faint);border-radius:4px}
+.lane{display:grid;grid-template-columns:120px minmax(0,1fr) 78px;align-items:center;gap:14px;margin-top:13px}
+.lane-name{font-size:13.2px;color:var(--soft)}
+.track{height:7px;background:var(--line-faint);border-radius:99px;overflow:hidden}
+.track i{display:block;height:100%;width:0;background:var(--soft);border-radius:99px}
+.lane.fast .track i{background:var(--blue)}
+.lane-t{font-size:12.6px;text-align:right;color:var(--soft)}
+.lane.fast .lane-t{color:var(--blue)}
+.race-out{margin:16px 0 0;font-size:13.2px;color:var(--soft)}
+.race-out.settled{color:var(--ink)}
+
+/* ── federated trust diagram ────────────────────────────── */
+.fed{margin:0 0 38px;padding:0}
+.fed-in{position:absolute;opacity:0;pointer-events:none}
+.fed-toggle{
+  display:inline-block;font-size:13.6px;cursor:pointer;
+  border:1px solid var(--line);border-radius:3px;padding:8px 17px;background:var(--raised);
+}
+.fed-toggle::before{content:"Encrypt every channel  ·  off"}
+.fed-in:checked ~ .fed-toggle{border-color:var(--blue);color:var(--blue)}
+.fed-in:checked ~ .fed-toggle::before{content:"Encrypt every channel  ·  on"}
+.fed-in:focus-visible ~ .fed-toggle{outline:2px solid var(--blue);outline-offset:3px}
+.fed svg{width:100%;height:auto;display:block;margin:20px 0 0}
+.f-edge{stroke:var(--soft);stroke-width:1.4;fill:none;transition:stroke .3s,stroke-dasharray .3s}
+.fed-in:checked ~ svg .f-edge{stroke:var(--blue);stroke-dasharray:4 4}
+.f-lock{opacity:0;transition:opacity .3s}
+.fed-in:checked ~ svg .f-lock{opacity:1}
+.f-lock rect{fill:var(--paper);stroke:var(--blue);stroke-width:1.2}
+.f-lock text{fill:var(--blue);font-family:"IBM Plex Mono",monospace;font-size:10px}
+.f-node rect{fill:var(--raised);stroke:var(--line);stroke-width:1.2}
+.f-node text{fill:var(--ink);font-family:"IBM Plex Mono",monospace;font-size:12px}
+.f-agg rect{fill:none;stroke:var(--red);stroke-width:1.8}
+.f-agg text{fill:var(--red);font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.f-agg .sub{font-size:10.5px}
+.fed figcaption{margin:16px 0 0;font-size:14.6px;color:var(--soft);max-width:56ch}
+.fed figcaption .then{display:none}
+.fed-in:checked ~ figcaption .now{display:none}
+.fed-in:checked ~ figcaption .then{display:block;color:var(--ink)}
+
+/* ── responsive ─────────────────────────────────────────── */
+@media (max-width:880px){
+  .shell{grid-template-columns:minmax(0,1fr);padding-bottom:70px}
+  .rail{display:none}
+  .body-col{grid-column:1}
+  .hero{padding-top:58px}
+  .proj{grid-template-columns:minmax(0,1fr);row-gap:16px;padding:26px 0}
+  .figure{order:2}
+  .proj .head{order:1}
+  .cv div,.kit div{grid-template-columns:minmax(0,1fr);row-gap:5px}
+  .graph{margin-top:36px}
+  .race{padding:16px}
+  .lane{grid-template-columns:88px minmax(0,1fr) 64px;gap:10px}
+  .lane-name{font-size:12.4px}
+  .log{height:150px;font-size:11.6px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+  .g-edge{stroke-dasharray:none}
+  .g-edge.adv{stroke-dasharray:5 4}
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#work">Skip to work</a>
+<button class="themer" id="themer" type="button">Dark</button>
+
+<div class="shell">
+
+  <!-- ══ hero ══ -->
+  <header class="hero">
+    <h1 class="name">Nishanth Gopinath <span class="alt">(Shan)</span></h1>
+
+    <p class="pitch">
+      I build multi-agent systems and make them fast.
+      <span class="q">Now asking how federated learning survives an aggregator you can't trust.</span>
+    </p>
+
+    <p class="where">Dublin, Ireland — open to AI/ML engineering roles and PhD positions.</p>
+
+    <ul class="links">
+      <li><a class="lead" href="resume.pdf" download>Download CV</a></li>
+      <li><a href="https://github.com/GNishanth7" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+      <li><a href="https://www.linkedin.com/in/nishanth-gopinath/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+      <li><a href="#" data-todo="email" id="mail">Email</a></li>
+      <li><a href="#" data-todo="scholar">Google Scholar</a></li>
+    </ul>
+
+    <div class="graph">
+      <svg viewBox="0 0 660 232" role="img" aria-label="Diagram: an orchestrator node connected to four project nodes — KittyKat, SPEAR, Kastro and ApplyAgent.">
+        <g class="g-root" id="root">
+          <rect x="266" y="16" width="128" height="34" rx="4"></rect>
+          <text x="330" y="37" text-anchor="middle">orchestrator</text>
+        </g>
+
+        <path class="g-edge"    id="p0" d="M330,52 C330,104 86,96 86,150"></path>
+        <path class="g-edge e2" id="p1" d="M330,52 C330,104 250,96 250,150"></path>
+        <path class="g-edge adv e3" id="p2" d="M330,52 C330,104 414,96 414,150"></path>
+        <path class="g-edge e4" id="p3" d="M330,52 C330,104 578,96 578,150"></path>
+
+        <a class="g-node" id="n0" href="#kittykat">
+          <rect x="14" y="150" width="144" height="36" rx="4"></rect>
+          <text x="86" y="172" text-anchor="middle">KittyKat</text>
+          <text x="86" y="204" text-anchor="middle" class="g-cap">30s &#8594; 290ms</text>
+        </a>
+        <a class="g-node" id="n1" href="#spear">
+          <rect x="178" y="150" width="144" height="36" rx="4"></rect>
+          <text x="250" y="172" text-anchor="middle">SPEAR</text>
+          <text x="250" y="204" text-anchor="middle" class="g-cap">5h &#8594; 15min</text>
+        </a>
+        <a class="g-node" id="n2" href="#kastro">
+          <rect x="342" y="150" width="144" height="36" rx="4"></rect>
+          <text x="414" y="172" text-anchor="middle">Kastro</text>
+          <text x="414" y="204" text-anchor="middle" class="g-cap">red / blue audit</text>
+        </a>
+        <a class="g-node" id="n3" href="#applyagent">
+          <rect x="506" y="150" width="144" height="36" rx="4"></rect>
+          <text x="578" y="172" text-anchor="middle">ApplyAgent</text>
+          <text x="578" y="204" text-anchor="middle" class="g-cap">runs itself</text>
+        </a>
+
+        <g id="packets"></g>
+      </svg>
+
+      <div class="runbar">
+        <button class="btn" type="button" id="run">Send a request</button>
+        <span class="hint">Watch it fan out. Or click any node to jump to that project.</span>
+      </div>
+
+      <div class="log" id="log" aria-live="polite">
+        <p class="idle">orchestrator  idle  ·  4 agents registered  ·  awaiting request</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ rail ══ -->
+  <nav class="rail" aria-label="Sections">
+    <ol>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#research">Research</a></li>
+      <li><a href="#background">Background</a></li>
+      <li><a href="#toolkit">Toolkit</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </nav>
+
+  <div class="body-col">
+
+    <!-- ══ work ══ -->
+    <section class="sec" id="work">
+      <h2>Work</h2>
+      <p class="lede">Four systems, each one a set of agents that hand work to each other. The numbers are the part I care about.</p>
+
+      <article class="proj" id="kittykat">
+        <div class="figure">
+          <span class="n">290<small>ms</small></span>
+          <span class="cap">Vector search, down from 30 seconds</span>
+        </div>
+        <div class="head">
+          <h3>KittyKat</h3>
+          <p class="role">AI/ML Software Developer, Aug&ndash;Oct 2025</p>
+          <p>Built a multi-agent supervisor platform on LangGraph for a fashion-tech studio, with results streaming to a Next.js front end as they resolved. The search layer was the bottleneck: moving it onto MongoDB Atlas HNSW indexes took lookups from thirty seconds to under three hundred milliseconds. Separately traced a cold-start problem on Cloud Run to synchronous invocation and fixed it by moving the trigger path to Pub/Sub.</p>
+          <p>Also shipped the n8n automation side &mdash; a Gemini Vision pipeline that pulls structured product data out of supplier images, and moodboard autofill running on the same vector index.</p>
+          <div class="race" id="race">
+            <button class="btn" type="button" id="raceGo">Race the two searches</button>
+            <div class="lane slow">
+              <span class="lane-name">Sequential scan</span>
+              <div class="track"><i id="barSlow"></i></div>
+              <span class="lane-t mono" id="tSlow">0 ms</span>
+            </div>
+            <div class="lane fast">
+              <span class="lane-name">HNSW index</span>
+              <div class="track"><i id="barFast"></i></div>
+              <span class="lane-t mono" id="tFast">0 ms</span>
+            </div>
+            <p class="race-out" id="raceOut">Same query, same corpus. Playback compressed roughly seven times.</p>
+          </div>
+          <ul class="stack">
+            <li>LangGraph</li><li>MongoDB Atlas HNSW</li><li>Cloud Run</li><li>Pub/Sub</li><li>Next.js</li><li>Gemini Vision</li><li>n8n</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="proj" id="spear">
+        <div class="figure">
+          <span class="n">15<small>min</small></span>
+          <span class="cap">Procurement review, down from 5 hours &middot; 1,000+ documents a day</span>
+        </div>
+        <div class="head">
+          <h3>SPEAR</h3>
+          <p class="role">Four-agent retrieval system for procurement analysis</p>
+          <p>Tender documents arrive in the hundreds and get read by people who bill by the hour. SPEAR splits that reading across four specialised agents coordinated in LangGraph &mdash; retrieval over a FAISS index, extraction, cross-checking, and synthesis &mdash; served through FastAPI with Gemini doing the reasoning. A five-hour manual pass now takes fifteen minutes, and it holds up at over a thousand documents a day.</p>
+          <ul class="stack">
+            <li>LangGraph</li><li>FAISS</li><li>FastAPI</li><li>Gemini</li><li>RAG</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="proj" id="kastro">
+        <div class="figure">
+          <span class="n">4<small> agents</small></span>
+          <span class="cap">Orchestrator, Red, Blue, Legislator</span>
+        </div>
+        <div class="head">
+          <h3>Kastro</h3>
+          <p class="role">Hiring bias auditor &middot; Tech Ireland National AI Challenge 2026</p>
+          <p>An auditor for automated hiring systems, built with a team and showcased at Dogpatch Labs. I own the agent layer, written on Google ADK: a Red agent that probes a screening model for disparate treatment, a Blue agent that argues the other side, a Legislator agent that grounds whatever they find in EU AI Act obligations for high-risk hiring systems, and an Orchestrator that keeps the exchange converging on evidence instead of opinion.</p>
+          <ul class="stack">
+            <li>Google ADK</li><li>Multi-agent</li><li>Red teaming</li><li>EU AI Act</li><li>Fairness metrics</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="proj" id="applyagent">
+        <div class="figure">
+          <span class="n">0<small> clicks</small></span>
+          <span class="cap">Driven end to end from a Telegram thread</span>
+        </div>
+        <div class="head">
+          <h3>ApplyAgent</h3>
+          <p class="role">Job application automation, controlled from a chat window</p>
+          <p>A LangGraph state machine that drives my career-ops CLI headlessly and takes its instructions over Telegram. Paste a posting into a chat, and it parses the role, tailors the CV against it, runs the ATS check, and reports back. Built for myself, which meant it had to survive real use rather than a demo.</p>
+          <ul class="stack">
+            <li>LangGraph</li><li>Telegram Bot API</li><li>Python</li><li>Headless CLI</li>
+          </ul>
+        </div>
+      </article>
+
+      <p class="also"><strong>Also:</strong> a health-insurance assistant built for Kota&rsquo;s challenge at the Give(a)Go hackathon &mdash; FAISS retrieval over policy documents, sentence-transformers embeddings, FastAPI, containerised. And the tooling underneath my own job search: a LaTeX CV pipeline, a resume-tailoring skill, and a mandatory ATS check that refuses to let a broken PDF out the door.</p>
+    </section>
+
+    <!-- ══ research ══ -->
+    <section class="sec" id="research">
+      <h2>Research</h2>
+      <p class="lede">Privacy-preserving machine learning, and the trust boundaries people assume are covered but aren&rsquo;t.</p>
+
+      <p class="question">Quantum key distribution secures the channel against an eavesdropper. It does nothing about the server doing the aggregating.</p>
+
+      <figure class="fed">
+        <input class="fed-in" type="checkbox" id="qkd" aria-label="Encrypt every channel with quantum key distribution">
+        <label class="fed-toggle" for="qkd"></label>
+        <svg viewBox="0 0 560 236" role="img" aria-label="Diagram: four hospitals sending model updates to a central aggregator, which sees every update whether or not the channels are encrypted.">
+          <path class="f-edge" d="M125,62 L232,92"></path>
+          <path class="f-edge" d="M435,62 L328,92"></path>
+          <path class="f-edge" d="M125,174 L232,140"></path>
+          <path class="f-edge" d="M435,174 L328,140"></path>
+
+          <g class="f-lock">
+            <rect x="158" y="69" width="41" height="16" rx="3"></rect>
+            <text x="178.5" y="80.5" text-anchor="middle">QKD</text>
+          </g>
+          <g class="f-lock">
+            <rect x="361" y="69" width="41" height="16" rx="3"></rect>
+            <text x="381.5" y="80.5" text-anchor="middle">QKD</text>
+          </g>
+          <g class="f-lock">
+            <rect x="158" y="149" width="41" height="16" rx="3"></rect>
+            <text x="178.5" y="160.5" text-anchor="middle">QKD</text>
+          </g>
+          <g class="f-lock">
+            <rect x="361" y="149" width="41" height="16" rx="3"></rect>
+            <text x="381.5" y="160.5" text-anchor="middle">QKD</text>
+          </g>
+
+          <g class="f-node"><rect x="60" y="28" width="130" height="34" rx="4"></rect>
+            <text x="125" y="49" text-anchor="middle">hospital A</text></g>
+          <g class="f-node"><rect x="370" y="28" width="130" height="34" rx="4"></rect>
+            <text x="435" y="49" text-anchor="middle">hospital B</text></g>
+          <g class="f-node"><rect x="60" y="174" width="130" height="34" rx="4"></rect>
+            <text x="125" y="195" text-anchor="middle">hospital C</text></g>
+          <g class="f-node"><rect x="370" y="174" width="130" height="34" rx="4"></rect>
+            <text x="435" y="195" text-anchor="middle">hospital D</text></g>
+
+          <g class="f-agg">
+            <rect x="205" y="92" width="150" height="48" rx="4"></rect>
+            <text x="280" y="113" text-anchor="middle">aggregator</text>
+            <text x="280" y="129" text-anchor="middle" class="sub">sees every update</text>
+          </g>
+        </svg>
+        <figcaption>
+          <span class="now">Four hospitals train locally and hand their model updates to one server. Turn the channel encryption on and watch what does not change.</span>
+          <span class="then">Every link is now secure against an eavesdropper. The aggregator still reads every update in full. Protecting the channel was never about the party sitting at the end of it, and that is the part I want to work on.</span>
+        </figcaption>
+      </figure>
+
+      <article class="paper">
+        <h3>Personalised Secure Slimmable Quantum Federated Learning for healthcare</h3>
+        <p class="venue">MSc dissertation &middot; Trinity College Dublin &middot; 73%</p>
+        <p>Federated learning for clinical data has to work across hospitals with unequal compute and unequal patient distributions, which is where slimmable networks and per-client personalisation come in. The security layer uses QKD to protect the links &mdash; and that is exactly where the interesting gap opens, because a protected channel still terminates at an aggregator with full sight of every update. That gap is what I want to spend a PhD on.</p>
+        <p class="honour">Best Paper Presenter Award</p>
+      </article>
+
+      <article class="paper">
+        <h3>Fetal health prediction using convolutional neural networks</h3>
+        <p class="venue">Published during BTech, Artificial Intelligence and Machine Learning</p>
+        <p>Classifying cardiotocography signals into fetal health categories with a CNN, on a dataset where the classes that matter clinically are the rarest ones. First real lesson in how far accuracy can be from usefulness.</p>
+      </article>
+    </section>
+
+    <!-- ══ background ══ -->
+    <section class="sec" id="background">
+      <h2>Background</h2>
+      <dl class="cv">
+        <div>
+          <dt>2025</dt>
+          <dd>AI/ML Software Developer, KittyKat
+            <span>Multi-agent platform, vector search, cloud reliability, automation pipelines.</span></dd>
+        </div>
+        <div>
+          <dt>2023</dt>
+          <dd>Plumb5
+            <span>Integrated the ChatGPT API into analytics reporting &mdash; production LLM work before it was a job title.</span></dd>
+        </div>
+        <div>
+          <dt>MSc</dt>
+          <dd>Computer Science (Data Science), Trinity College Dublin
+            <span>Dissertation on secure federated learning for healthcare.</span></dd>
+        </div>
+        <div>
+          <dt>BTech</dt>
+          <dd>Artificial Intelligence and Machine Learning
+            <span>Published research on CNN-based fetal health prediction.</span></dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ══ toolkit ══ -->
+    <section class="sec" id="toolkit">
+      <h2>Toolkit</h2>
+      <dl class="kit">
+        <div><dt>Agents</dt><dd>LangGraph &nbsp; Google ADK &nbsp; n8n &nbsp; tool orchestration</dd></div>
+        <div><dt>Models</dt><dd>Gemini &nbsp; OpenAI API &nbsp; PyTorch &nbsp; sentence-transformers</dd></div>
+        <div><dt>Retrieval</dt><dd>FAISS &nbsp; MongoDB Atlas vector search &nbsp; RAG pipelines</dd></div>
+        <div><dt>Services</dt><dd>FastAPI &nbsp; Next.js &nbsp; Docker &nbsp; Cloud Run &nbsp; Pub/Sub</dd></div>
+        <div><dt>Research</dt><dd>Federated learning &nbsp; differential privacy &nbsp; CNNs</dd></div>
+      </dl>
+    </section>
+
+    <!-- ══ contact ══ -->
+    <section class="sec" id="contact">
+      <h2>Contact</h2>
+      <div class="close">
+        <p>If you are hiring for agent work, or supervising research on privacy in distributed learning, I would like to hear from you.</p>
+        <ul class="links">
+          <li><a class="lead" href="#" data-todo="email">Email me</a></li>
+          <li><a href="resume.pdf" download>Download CV</a></li>
+          <li><a href="https://github.com/GNishanth7" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li><a href="https://www.linkedin.com/in/nishanth-gopinath/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+        </ul>
+      </div>
+      <footer>Dublin, Ireland</footer>
+    </section>
+
+    <!-- Ready to switch on once you have two or three posts written:
+    <section class="sec" id="notes">
+      <h2>Notes</h2>
+      <p class="lede">Working notes on things I had to figure out.</p>
+      <article class="paper">
+        <h3><a href="#">Thirty seconds to three hundred milliseconds</a></h3>
+        <p class="venue">On HNSW indexes and what was actually slow</p>
+      </article>
+      <article class="paper">
+        <h3><a href="#">What a red/blue audit actually catches in a hiring model</a></h3>
+        <p class="venue">And what it misses</p>
+      </article>
+      <article class="paper">
+        <h3><a href="#">Evaluating agents without lying to yourself</a></h3>
+        <p class="venue">Pass/fail thresholds, LLM-as-judge, and where both break</p>
+      </article>
+    </section>
+    -->
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn  = document.getElementById('themer');
+
+  function saved(){ try { return localStorage.getItem('theme'); } catch(e){ return null; } }
+  function keep(v){ try { localStorage.setItem('theme', v); } catch(e){} }
+
+  function isDark(){
+    var t = root.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function label(){ btn.textContent = isDark() ? 'Light' : 'Dark'; }
+
+  var s = saved();
+  if (s === 'dark' || s === 'light') root.setAttribute('data-theme', s);
+  label();
+
+  btn.addEventListener('click', function(){
+    var next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    keep(next);
+    label();
+  });
+
+  // rail scroll-spy
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var secs  = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (!en.isIntersecting) return;
+        links.forEach(function(a, i){
+          a.setAttribute('aria-current', secs[i] === en.target ? 'true' : 'false');
+        });
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    secs.forEach(function(s){ if (s) io.observe(s); });
+  }
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── hero: run a request through the graph ── */
+  var runBtn = document.getElementById('run');
+  var logEl  = document.getElementById('log');
+  var rootN  = document.getElementById('root');
+  var pkts   = document.getElementById('packets');
+
+  var AGENTS = [
+    { id:0, work: 620, out:'orchestrator  →  kittykat.search',   back:'kittykat.search    hnsw  ·  290ms  ·  12 matches' },
+    { id:1, work:1180, out:'orchestrator  →  spear.extract',     back:'spear.extract      4 agents  ·  38 clauses parsed' },
+    { id:2, work:1620, out:'orchestrator  →  kastro.audit',      back:'kastro.audit       red/blue  ·  2 fairness flags', warn:true },
+    { id:3, work: 880, out:'orchestrator  →  applyagent.tailor', back:'applyagent.tailor  cv rebuilt  ·  ats pass' }
+  ];
+
+  var timers = [], token = 0;
+
+  function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+
+  function line(text, cls){
+    var p = document.createElement('p');
+    if (cls) p.className = cls;
+    p.textContent = text;
+    logEl.appendChild(p);
+    while (logEl.children.length > 4) logEl.removeChild(logEl.firstChild);
+  }
+
+  function packet(idx, back, warn, done){
+    var path = document.getElementById('p' + idx);
+    if (reduce || !path || !path.getTotalLength) { done && done(); return; }
+    var len = path.getTotalLength();
+    var c = document.createElementNS(NS, 'circle');
+    c.setAttribute('r', '4.5');
+    c.setAttribute('class', 'pkt' + (warn ? ' flag' : ''));
+    pkts.appendChild(c);
+    var t0 = 0, mine = token;
+    function step(ts){
+      if (mine !== token) { if (c.parentNode) c.parentNode.removeChild(c); return; }
+      if (!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / 560);
+      var e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+      var pt = path.getPointAtLength((back ? 1 - e : e) * len);
+      c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+      if (k < 1) requestAnimationFrame(step);
+      else { if (c.parentNode) c.parentNode.removeChild(c); done && done(); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function run(){
+    token++;
+    timers.forEach(clearTimeout); timers = [];
+    pkts.textContent = ''; logEl.textContent = '';
+    rootN.setAttribute('class', 'g-root');
+    for (var i = 0; i < 4; i++) document.getElementById('n' + i).setAttribute('class', 'g-node');
+
+    var mine = token, returned = 0;
+    runBtn.disabled = true;
+    runBtn.textContent = 'Running';
+    line('user  →  orchestrator   "find products matching this moodboard"', 'hi');
+
+    at(reduce ? 0 : 320, function(){
+      rootN.setAttribute('class', 'g-root live');
+      line('orchestrator  planning  ·  fan-out to 4 agents');
+    });
+
+    AGENTS.forEach(function(a, i){
+      at((reduce ? 0 : 640) + i * 130, function(){
+        packet(a.id, false, a.warn, function(){
+          if (mine !== token) return;
+          var n = document.getElementById('n' + a.id);
+          n.setAttribute('class', 'g-node ' + (a.warn ? 'flag' : 'live'));
+          line(a.out);
+          at(a.work, function(){
+            if (mine !== token) return;
+            packet(a.id, true, a.warn, function(){
+              if (mine !== token) return;
+              n.setAttribute('class', 'g-node done');
+              line(a.back, a.warn ? 'warn' : '');
+              if (++returned === AGENTS.length) {
+                at(300, function(){
+                  rootN.setAttribute('class', 'g-root');
+                  line('orchestrator  synthesised  ·  4/4 returned  ·  1.62s', 'hi');
+                  runBtn.disabled = false;
+                  runBtn.textContent = 'Send another request';
+                });
+              }
+            });
+          });
+        });
+      });
+    });
+  }
+
+  if (runBtn && logEl && rootN && pkts) runBtn.addEventListener('click', run);
+
+  /* ── latency race ── */
+  var raceGo = document.getElementById('raceGo'),
+      barS = document.getElementById('barSlow'), barF = document.getElementById('barFast'),
+      tS = document.getElementById('tSlow'), tF = document.getElementById('tFast'),
+      out = document.getElementById('raceOut');
+
+  var SLOW = 30000, FAST = 290, PLAY = 4200;
+
+  function fmt(ms){
+    return ms >= 1000 ? (ms / 1000).toFixed(ms >= 10000 ? 1 : 2) + ' s' : Math.round(ms) + ' ms';
+  }
+  function settle(){
+    out.className = 'race-out settled';
+    out.textContent = 'Roughly 103 times faster. The index was the whole fix.';
+    raceGo.disabled = false;
+    raceGo.textContent = 'Race again';
+  }
+  function race(){
+    raceGo.disabled = true;
+    raceGo.textContent = 'Running';
+    out.className = 'race-out';
+    out.textContent = 'Both queries away.';
+    if (reduce) {
+      barS.style.width = '100%'; barF.style.width = '100%';
+      tS.textContent = fmt(SLOW); tF.textContent = fmt(FAST);
+      settle(); return;
+    }
+    var fastReal = Math.max(160, PLAY * (FAST / SLOW)), t0 = 0;
+    function step(ts){
+      if (!t0) t0 = ts;
+      var el = ts - t0,
+          ks = Math.min(1, el / PLAY),
+          kf = Math.min(1, el / fastReal);
+      barS.style.width = (ks * 100) + '%'; tS.textContent = fmt(ks * SLOW);
+      barF.style.width = (kf * 100) + '%'; tF.textContent = fmt(kf * FAST);
+      if (ks < 1) requestAnimationFrame(step); else settle();
+    }
+    requestAnimationFrame(step);
+  }
+
+  if (raceGo && barS && barF && out) raceGo.addEventListener('click', race);
+})();
+</script>
+</body>
+</html>
